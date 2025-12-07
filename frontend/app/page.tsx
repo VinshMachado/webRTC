@@ -5,10 +5,6 @@ declare global {
   interface Window {
     google: any;
   }
-
-  interface google {
-    accounts: any;
-  }
 }
 
 export default function Home() {

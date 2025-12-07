@@ -28,17 +28,16 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <head>
+      <head></head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        {children}
         <script
           src="https://accounts.google.com/gsi/client"
           async
           defer
         ></script>
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
       </body>
     </html>
   );
