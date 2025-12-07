@@ -1,19 +1,8 @@
 import { Router } from "express";
-import passport from "passport";
+import googleVerify from "../controller/googleauth.js";
 
 const GoogleAuthRouter = Router();
 
-GoogleAuthRouter.get(
-  "/login",
-  passport.authenticate("google", { scope: ["profile"] })
-);
-
-GoogleAuthRouter.get(
-  "/callback",
-  passport.authenticate("google", { failureRedirect: "/auth/login" }),
-  function (req, res) {
-    res.redirect("/");
-  }
-);
+GoogleAuthRouter.post("/GetToken", googleVerify);
 
 export default GoogleAuthRouter;

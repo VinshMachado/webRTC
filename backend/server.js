@@ -1,27 +1,38 @@
 import express from "express";
-import passport from "passport";
-import session from "express-session";
 import GoogleAuthRouter from "./view/googleAuth.js";
-import "./controller/googleauth.js"; // make sure strategy loads
+import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
+import userRouter from "./view/user.js";
 
+dotenv.config();
 const app = express();
 const port = 8080;
 
+// data base connection//
+
+mongoose
+  .connect(
+    "mongodb+srv://machadovinish_db_user:pewdiepie@cluster0.htlwlju.mongodb.net/myDatabase?retryWrites=true&w=majority"
+  )
+  .then(() => {
+    console.log("Connected to database");
+  })
+  .catch((err) => {
+    console.error("Database connection error:", err);
+  });
+
+//Middlewares
+app.use(express.json());
+app.use(cookieParser());
 app.use(express.json());
 
-app.use(
-  session({
-    secret: "SECRET_KEY",
-    resave: false,
-    saveUninitialized: true,
-  })
-);
-
-app.use(passport.initialize());
-app.use(passport.session());
-
+// Routers
 app.use("/auth", GoogleAuthRouter);
 
+app.use("/user", userRouter);
+
+//Listen
 app.listen(port, () => {
   console.log("server running on port:", port);
 });
