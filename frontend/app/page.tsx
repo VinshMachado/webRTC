@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-
+import { useRouter } from "next/navigation";
 declare global {
   interface Window {
     google: any;
@@ -8,9 +8,36 @@ declare global {
 }
 
 export default function Home() {
-  const handleGoogle = (response: any) => {
-    console.log("ID TOKEN:", response.credential);
+  const router = useRouter();
+  const handleGoogle = async (response: any) => {
+    console.log(
+      "ID TOKEsN:",
+      response.credential,
+      ":",
+      process.env.NEXT_PUBLIC_BACKEND
+    );
     // send this token to backend for verification
+    const id = response.credential;
+
+    const responce = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND}/auth/GetToken`,
+      {
+        method: "POST",
+        body: JSON.stringify({ _id: id }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await responce.json();
+    if (!responce.ok) {
+      console.log(data);
+      alert("failed");
+    } else {
+      router.push("/dashboard");
+    }
+    console.log("worked");
   };
 
   useEffect(() => {
