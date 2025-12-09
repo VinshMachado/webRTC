@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import userRouter from "./view/user.js";
-
+import cors from "cors";
 dotenv.config();
 const app = express();
 const port = 8080;
@@ -24,6 +24,13 @@ mongoose
 
 //Middlewares
 app.use(express.json());
+app.use(
+  cors({
+    origin: "*", // allow all (or put your domain)
+    methods: "GET,POST,PUT",
+    credentials: true,
+  })
+);
 app.use(cookieParser());
 app.use(express.json());
 
