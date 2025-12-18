@@ -69,7 +69,8 @@ export default function Home() {
         email: data.obj[0].email,
         profile: data.obj[0].profile,
       });
-      alert("worked adsads");
+
+      router.push("/dashboard");
     }
     console.log("worked1");
   };
@@ -104,6 +105,7 @@ export default function Home() {
       <div id="google-btn" className=" mt-10">
         {" "}
         Sign in
+        
       </div>
     </div>
   );
