@@ -6,6 +6,7 @@ const client = new OAuth2Client();
 
 async function googleVerify(req, res) {
   console.log("google var");
+
   const { _id } = req.body;
 
   //  Validate token
@@ -52,11 +53,10 @@ async function googleVerify(req, res) {
       { expiresIn: "7d" }
     );
 
-    //  Send cookie
     res.cookie("token", jwtToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      secure: false, // HTTP localhost
+      sameSite: "lax", // ✅ REQUIRED for localhost
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 

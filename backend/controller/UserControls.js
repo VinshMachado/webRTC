@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 
 const getUserDetails = async (req, res) => {
   const token = req.cookies.token;
+  console.log(token);
 
   const data = jwt.verify(token, process.env.JWT_SECRET);
 
