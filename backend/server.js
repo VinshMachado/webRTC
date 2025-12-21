@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 const port = 8080;
 
-// data base connection//
+// ------------------data base connection//
 
 mongoose
   .connect(
@@ -24,18 +24,18 @@ mongoose
     console.error("Database connection error:", err);
   });
 
-// making http server
+// -------------------making http server
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3000",
   },
 });
-//Middlewares
+//--------------------Middlewares
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:3000", // exact origin
+    origin: "http://localhost:3000",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
   })
@@ -43,32 +43,37 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 
-// Routers
+//-------------------- Routers
 app.use("/auth", GoogleAuthRouter);
 app.use("/user", userRouter);
 
-//Socket Io
+//---------------------Socket Io
+
 io.on("connection", (server) => {
-  server.on("join-room", (roomId) => {
-    socket.join(roomId);
+  server.on("join-room", (room) => {
+    console.log(room.id);
+
+    server.join(room?.id?.trim());
   });
 
-  server.io("offer", (roomId) => {
-    socket.to(roomId).emit("offer", offer);
-    console.log(`Offer sent to room ${roomId}`);
+  server.on("offer", ({ roomId, offer }) => {
+    console.log(" s", roomId, offer);
+    server.to(roomId).emit("offer", offer);
   });
 
-  socket.on("answer", ({ roomId, answer }) => {
-    socket.to(roomId).emit("answer", answer);
-    console.log(`Answer sent to room ${roomId}`);
+  server.on("answer", (ans) => {
+    console.log("answerSide");
+    console.log(ans);
+    server.to(ans.Room).emit("answer", ans.answer);
   });
 
-  socket.on("ice-candidate", ({ roomId, candidate }) => {
-    socket.to(roomId).emit("ice-candidate", candidate);
-  });
+  server.on("ice", ({ room, candidate }) =>
+    server.to(room).emit("ice", candidate)
+  );
 });
 
-//Listen
-app.listen(port, () => {
+//------------------------Listen
+
+server.listen(port, () => {
   console.log("server running on port:", port);
 });
