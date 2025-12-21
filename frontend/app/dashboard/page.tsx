@@ -13,7 +13,7 @@ const page = () => {
              shadow-lg shadow-indigo-600/30
              active:scale-95"
         onClick={() => {
-          router.push("/dashboard/meeting?host=true");
+          router.push("/dashboard/Createmeeting");
         }}
       >
         Create a meeting
@@ -25,7 +25,7 @@ const page = () => {
              shadow-lg shadow-black/40
              active:scale-95"
         onClick={() => {
-          router.push("/dashboard/meeting?host=false");
+          router.push("/dashboard/joinMeeting");
         }}
       >
         Join a meeting
