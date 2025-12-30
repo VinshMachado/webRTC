@@ -33,6 +33,8 @@ const page = () => {
       const offer = await peerConnection.current.createOffer();
 
       await peerConnection.current.setLocalDescription(offer);
+
+      socket.emit("offer", { tempRoom, offer });
     }
   };
 
@@ -58,12 +60,8 @@ const page = () => {
   useEffect(() => {
     webrtcConnection();
 
-    socket.on("offer", async (offer) => {
-      console.log(offer);
-      await peerConnection.current?.setRemoteDescription(offer);
-      const answer = await peerConnection.current?.createAnswer();
-      await peerConnection.current?.setLocalDescription(answer);
-      socket.emit("answer", { roomId, answer });
+    socket.on("answer", async (answer) => {
+      console.log(answer);
     });
   }, []);
 
