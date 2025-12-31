@@ -28,14 +28,23 @@ const page = () => {
     peerConnection.current = new RTCPeerConnection(configuration);
     const tempRoom = inputString;
 
-    socket.emit("join-room", { id: tempRoom });
+    console.log(peerConnection);
+
+    await socket.emit("join-room", { id: tempRoom });
+
+    const room = inputString;
+
     if (peerConnection) {
       const offer = await peerConnection.current.createOffer();
 
       await peerConnection.current.setLocalDescription(offer);
+      console.log("tihs:", room);
 
-      socket.emit("offer", { tempRoom, offer });
+      socket.emit("offer", { room, offer });
     }
+    peerConnection.current.onicecandidate = (e) => {
+      if (e.candidate) socket.emit("ice", { roomId, candidate: e.candidate });
+    };
   };
 
   const GetCamera = async () => {
@@ -48,17 +57,8 @@ const page = () => {
     }
   };
 
-  const webrtcConnection = async () => {
-    // web rtc thing
-    peerConnection.current = new RTCPeerConnection(configuration);
-
-    peerConnection.current.onicecandidate = (e) => {
-      if (e.candidate) socket.emit("ice", { roomId, candidate: e.candidate });
-    };
-  };
-
   useEffect(() => {
-    webrtcConnection();
+    GetCamera();
 
     socket.on("answer", async (answer) => {
       console.log(answer);

@@ -47,11 +47,10 @@ const Page = () => {
 
       await peerConnection.current.setLocalDescription(offer);
 
-      await socket.emit("offer", { roomId, offer });
-
       peerConnection.current.onicecandidate = (e) => {
         if (e.candidate) socket.emit("ice", { roomId, candidate: e.candidate });
       };
+
       peerConnection.current.ontrack = (e) => {
         if (remoteVideo.current) {
           remoteVideo.current.srcObject = e.streams[0];
@@ -80,7 +79,7 @@ const Page = () => {
   // socket things
   useEffect(() => {
     GetCamera();
-    socket.on("offer", async (offer) => {
+    socket.on("recieveOffer", async (offer) => {
       console.log(offer);
     });
 
