@@ -51,14 +51,14 @@ app.use("/user", userRouter);
 
 io.on("connection", (server) => {
   server.on("join-room", (room) => {
-    console.log(room.id);
-
     server.join(room?.id?.trim());
   });
 
-  server.on("offer", ({ roomId, offer }) => {
-    console.log(" s", roomId, offer);
-    server.to(roomId).emit("offer", offer);
+  server.on("offer", ({ room, offer }) => {
+    console.log("sss:", offer);
+    console.log(room);
+
+    server.to(room).emit("recieveOffer", offer);
   });
 
   server.on("answer", (ans) => {
