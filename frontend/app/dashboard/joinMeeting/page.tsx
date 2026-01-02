@@ -28,8 +28,6 @@ const page = () => {
     peerConnection.current = new RTCPeerConnection(configuration);
     const tempRoom = inputString;
 
-    console.log(peerConnection);
-
     await socket.emit("join-room", { id: tempRoom });
 
     const room = inputString;
@@ -60,7 +58,7 @@ const page = () => {
   useEffect(() => {
     GetCamera();
 
-    socket.on("answer", async (answer) => {
+    socket.on("recieveAnswer", async (answer) => {
       console.log(answer);
     });
   }, []);

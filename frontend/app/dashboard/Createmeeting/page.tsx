@@ -79,11 +79,18 @@ const Page = () => {
   // socket things
   useEffect(() => {
     GetCamera();
-    socket.on("recieveOffer", async (offer) => {
-      console.log(offer);
+    socket.on("recieveOffer", async ({ offer, room }) => {
+      console.log("rec");
+      console.log("offer thing", offer, room);
+      if (peerConnection) peerConnection.current?.setRemoteDescription(offer);
+
+      const answer = await peerConnection.current?.createAnswer();
+      await peerConnection.current?.setLocalDescription(answer);
+      socket.emit("answer", { answer, room });
+      socket.off("answer");
     });
 
-    socket.off("offer");
+    socket.off("recieveOffer");
   }, []);
 
   return (
