@@ -3,7 +3,8 @@ import React, { useEffect } from "react";
 import { useRef, useState } from "react";
 
 import UserDetails from "@/Storage/Store";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
+
 const configuration = {
   iceServers: [
     {
@@ -14,7 +15,8 @@ const configuration = {
 };
 
 const page = () => {
-  const socket = io(process.env.NEXT_PUBLIC_BACKEND);
+  const [socket, setSocket] = useState<any | null>(null);
+
   const Userdata = UserDetails((state) => state.Userdata);
 
   const [roomId, setRoomid] = useState<string | null>();
@@ -28,21 +30,7 @@ const page = () => {
     peerConnection.current = new RTCPeerConnection(configuration);
     const tempRoom = inputString;
 
-    await socket.emit("join-room", { id: tempRoom });
-
-    const room = inputString;
-
-    if (peerConnection) {
-      const offer = await peerConnection.current.createOffer();
-
-      await peerConnection.current.setLocalDescription(offer);
-      console.log("tihs:", room);
-
-      socket.emit("offer", { room, offer });
-    }
-    peerConnection.current.onicecandidate = (e) => {
-      if (e.candidate) socket.emit("ice", { roomId, candidate: e.candidate });
-    };
+    await socket?.emit("join-room", { id: tempRoom });
   };
 
   const GetCamera = async () => {
@@ -56,10 +44,25 @@ const page = () => {
   };
 
   useEffect(() => {
-    GetCamera();
+    if (!socket) {
+      const newSocket = io(process.env.NEXT_PUBLIC_BACKEND);
+      setSocket(newSocket);
+    }
 
-    socket.on("recieveAnswer", async (answer) => {
-      console.log(answer);
+    return () => {
+      socket?.disconnect();
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    console.log(socket);
+  }, [socket]);
+
+  useEffect(() => {
+    GetCamera();
+    socket?.on("Greeting", (message: string) => {
+      alert(message);
+      console.log(message);
     });
   }, []);
 

@@ -1,10 +1,9 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import UserDetails from "../../../Storage/Store";
-import { io } from "socket.io-client";
-import { useSearchParams } from "next/navigation";
-import { off } from "process";
+import React, { useEffect } from "react";
+import { useRef, useState } from "react";
 
+import UserDetails from "@/Storage/Store";
+import { io, Socket } from "socket.io-client";
 const configuration = {
   iceServers: [
     {
@@ -14,83 +13,52 @@ const configuration = {
   iceCandidatePoolSize: 10,
 };
 
-const Page = () => {
-  const socket = io(process.env.NEXT_PUBLIC_BACKEND);
+const page = () => {
+  const [socket, setSocket] = useState<Socket | null>(null);
+
   const Userdata = UserDetails((state) => state.Userdata);
 
   const [roomId, setRoomid] = useState<string | null>();
+  const [inputString, setInputString] = useState<string | null>();
 
   const localVideo = useRef<HTMLVideoElement | null>(null);
   const remoteVideo = useRef<HTMLVideoElement | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
 
+  const join_room = async () => {
+    const tempRoom = inputString;
+
+    await socket?.emit("join-room", { id: tempRoom });
+  };
+
   const GetCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-      });
-
-      if (localVideo.current) {
-        localVideo.current.srcObject = stream;
-      }
-      return stream;
-    } catch (err) {
-      console.error("Camera access denied:", err);
-    }
-  };
-
-  const webrtcConnection = async (roomId: string) => {
-    // web rtc thing
-    peerConnection.current = new RTCPeerConnection(configuration);
-    if (peerConnection) {
-      const offer = await peerConnection.current.createOffer();
-
-      await peerConnection.current.setLocalDescription(offer);
-
-      peerConnection.current.onicecandidate = (e) => {
-        if (e.candidate) socket.emit("ice", { roomId, candidate: e.candidate });
-      };
-
-      peerConnection.current.ontrack = (e) => {
-        if (remoteVideo.current) {
-          remoteVideo.current.srcObject = e.streams[0];
-        }
-      };
-    }
-  };
-
-  // room creation and stuff
-  useEffect(() => {
-    console.log(Userdata); // logs whenever userdata updates\
-
-    const randomstring = `
-      ${Math.random()
-        .toString(36)
-        .substring(2, 2 + 9)}
-    `;
-    setRoomid(randomstring);
-
-    console.log(roomId);
-
-    socket.emit("join-room", { id: randomstring });
-    webrtcConnection(randomstring);
-  }, []);
-
-  // socket things
-  useEffect(() => {
-    GetCamera();
-    socket.on("recieveOffer", async ({ offer, room }) => {
-      console.log("rec");
-      console.log("offer thing", offer, room);
-      if (peerConnection) peerConnection.current?.setRemoteDescription(offer);
-
-      const answer = await peerConnection.current?.createAnswer();
-      await peerConnection.current?.setLocalDescription(answer);
-      socket.emit("answer", { answer, room });
-      socket.off("answer");
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
     });
 
-    socket.off("recieveOffer");
+    if (localVideo.current) {
+      localVideo.current.srcObject = stream;
+    }
+  };
+
+  useEffect(() => {
+    if (!socket) {
+      const newSocket = io(process.env.NEXT_PUBLIC_BACKEND);
+      setSocket(newSocket);
+    }
+
+    return () => {
+      socket?.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    GetCamera();
+
+    socket?.on("Greeting", (message: string) => {
+      alert(message);
+      console.log(message);
+    });
   }, []);
 
   return (
@@ -117,10 +85,33 @@ const Page = () => {
           </div>
         </>
       ) : (
-        <div>Loading....</div>
+        <div className="w-full h-[100vh] bg-slate-900 flex justify-center items-center">
+          <input
+            className="w-[250px] h-20 m-5 h-[50px] border-none bg-blue-950 p-3 rounded-2xl"
+            placeholder="Enter Room Id"
+            onChange={(e) => {
+              setInputString(e.target.value);
+            }}
+          />
+
+          <button
+            className="px-6 py-3 rounded-lg bg-gray-700 text-gray-200 font-medium
+             hover:bg-gray-600 transition
+             shadow-lg shadow-black/40
+             active:scale-95"
+            onClick={async () => {
+              setRoomid(inputString);
+
+              join_room();
+              await GetCamera();
+            }}
+          >
+            Create a meeting ID
+          </button>
+        </div>
       )}
     </>
   );
 };
 
-export default Page;
+export default page;
