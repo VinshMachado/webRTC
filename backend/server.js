@@ -49,27 +49,17 @@ app.use("/user", userRouter);
 
 //---------------------Socket Io
 
-io.on("connection", (server) => {
-  server.on("join-room", (room) => {
-    server.join(room?.id?.trim());
+io.on("connection", (socket) => {
+  console.log("socket: ", socket.id);
+  socket.on("join-room", (room) => {
+    console.log(room.id);
+    const roomID = room?.id?.trim();
+
+    socket.join(roomID);
+
+    console.log(`${socket.id} joined the room`, roomID);
+    socket.to(`${roomID}`).emit("Greeting", "you Someone Joined the meeting");
   });
-
-  server.on("offer", ({ room, offer }) => {
-    console.log("sss:", offer);
-    console.log(room);
-
-    server.to(room).emit("recieveOffer", offer);
-  });
-
-  server.on("answer", (ans) => {
-    console.log("answerSide");
-    console.log(ans);
-    server.to(ans.Room).emit("answer", ans.answer);
-  });
-
-  server.on("ice", ({ room, candidate }) =>
-    server.to(room).emit("ice", candidate)
-  );
 });
 
 //------------------------Listen
