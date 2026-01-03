@@ -28,7 +28,7 @@ const page = () => {
   const join_room = async () => {
     const tempRoom = inputString;
 
-    await socket?.emit("join-room", { id: tempRoom });
+    await socket?.emit("join-room", { id: tempRoom, name: Userdata.name });
   };
 
   const GetCamera = async () => {
