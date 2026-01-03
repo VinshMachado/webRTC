@@ -53,12 +53,16 @@ const page = () => {
   }, []);
 
   useEffect(() => {
-    GetCamera();
+    if (!socket) return;
 
     socket?.on("Greeting", (message: string) => {
       alert(message);
       console.log(message);
     });
+  }, [socket]);
+
+  useEffect(() => {
+    GetCamera();
   }, []);
 
   return (
