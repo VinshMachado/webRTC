@@ -58,7 +58,7 @@ io.on("connection", (socket) => {
     socket.join(roomID);
 
     console.log(`${socket.id} joined the room`, roomID);
-    socket.to(`${roomID}`).emit("Greeting", "you Someone Joined the meeting");
+    socket.to(`${roomID}`).emit("Greeting", `${room.name} Joined the meeting`);
   });
 });
 
