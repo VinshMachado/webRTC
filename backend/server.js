@@ -60,6 +60,25 @@ io.on("connection", (socket) => {
     console.log(`${socket.id} joined the room`, roomID);
     socket.to(`${roomID}`).emit("Greeting", `${room.name} Joined the meeting`);
   });
+
+  socket.on("offer", (data) => {
+    console.log("offer side:", data);
+    socket.to(data.Room).emit("recieveOffer", data);
+  });
+
+  socket.on("answer", (data) => {
+    console.log("answer side:", data);
+    socket.to(data.Room).emit("recieveAnswer", data);
+  });
+
+  socket.on("ice-candidate", async ({ candidate }) => {
+    console.log(candidate);
+    if (candidate && peerConnection.current) {
+      await peerConnection.current.addIceCandidate(
+        new RTCIceCandidate(candidate)
+      );
+    }
+  });
 });
 
 //------------------------Listen
