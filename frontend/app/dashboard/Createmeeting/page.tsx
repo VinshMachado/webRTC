@@ -19,7 +19,7 @@ const page = () => {
   const Userdata = UserDetails((state) => state.Userdata);
 
   const [roomId, setRoomid] = useState<string | null>();
-  const [inputString, setInputString] = useState<string | null>();
+  const [inputString, setInputString] = useState<string | null>(null);
 
   const localVideo = useRef<HTMLVideoElement | null>(null);
   const remoteVideo = useRef<HTMLVideoElement | null>(null);
@@ -52,12 +52,40 @@ const page = () => {
     };
   }, []);
 
+  const handelRecieveOffer = async (data: { Room: string; offer: any }) => {
+    console.log("this is backend:", data);
+
+    peerConnection.current?.setRemoteDescription(data.offer);
+    const answer = await peerConnection.current?.createAnswer();
+
+    await peerConnection.current?.setLocalDescription(answer);
+
+    console.log(roomId);
+    const Room = data.Room;
+    console.log(Room, answer);
+    await socket?.emit("answer", { Room, answer });
+  };
+
   useEffect(() => {
     if (!socket) return;
+    peerConnection.current = new RTCPeerConnection(configuration);
+
+    peerConnection.current.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket?.emit("ice-candidate", {
+          Room: inputString,
+          candidate: event.candidate,
+        });
+      }
+    };
 
     socket?.on("Greeting", (message: string) => {
       alert(message);
       console.log(message);
+    });
+
+    socket.on("recieveOffer", async (data) => {
+      handelRecieveOffer(data);
     });
   }, [socket]);
 

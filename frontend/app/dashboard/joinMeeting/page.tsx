@@ -27,10 +27,25 @@ const page = () => {
   const peerConnection = useRef<RTCPeerConnection | null>(null);
 
   const join_room = async () => {
-    peerConnection.current = new RTCPeerConnection(configuration);
     const tempRoom = inputString;
 
     await socket?.emit("join-room", { id: tempRoom, name: Userdata.name });
+
+    peerConnection.current = new RTCPeerConnection(configuration);
+
+    peerConnection.current.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket?.emit("ice-candidate", {
+          Room: inputString,
+          candidate: event.candidate,
+        });
+      }
+    };
+    const offer = await peerConnection.current?.createOffer();
+
+    if (offer) await peerConnection.current?.setLocalDescription(offer);
+    const Room = inputString;
+    await socket?.emit("offer", { Room, offer });
   };
 
   const GetCamera = async () => {
@@ -57,9 +72,23 @@ const page = () => {
   useEffect(() => {
     if (!socket) return;
     console.log(socket);
-    socket?.on("Greeting", (message: string) => {
+    socket?.on("Greeting", async (message: string) => {
       alert(message);
+
       console.log(message);
+    });
+
+    socket?.on("recieveAnswer", async (data: { Room: string; answer: any }) => {
+      console.log("recieved ans:", data.answer);
+      await peerConnection.current?.setRemoteDescription(data.answer);
+
+      if (peerConnection.current) {
+        peerConnection.current.ontrack = (event) => {
+          if (remoteVideo.current) {
+            remoteVideo.current.srcObject = event.streams[0];
+          }
+        };
+      }
     });
   }, [socket]);
 
