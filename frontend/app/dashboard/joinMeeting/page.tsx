@@ -43,7 +43,10 @@ const page = () => {
     };
     const offer = await peerConnection.current?.createOffer();
 
-    if (offer) await peerConnection.current?.setLocalDescription(offer);
+    if (offer)
+      await peerConnection.current?.setLocalDescription(
+        new RTCSessionDescription(offer)
+      );
     const Room = inputString;
     await socket?.emit("offer", { Room, offer });
   };

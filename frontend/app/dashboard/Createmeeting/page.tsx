@@ -55,14 +55,14 @@ const page = () => {
   const handelRecieveOffer = async (data: { Room: string; offer: any }) => {
     console.log("this is backend:", data);
 
-    peerConnection.current?.setRemoteDescription(data.offer);
+    await peerConnection.current?.setRemoteDescription(data.offer);
     const answer = await peerConnection.current?.createAnswer();
 
     await peerConnection.current?.setLocalDescription(answer);
 
     console.log(roomId);
     const Room = data.Room;
-    console.log(Room, answer);
+    console.log("sent answer", answer);
     await socket?.emit("answer", { Room, answer });
   };
 
