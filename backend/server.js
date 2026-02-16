@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 const port = 8080;
 
-// ------------------data base connection//
+// ------------------data  base connection//
 
 mongoose
   .connect(
