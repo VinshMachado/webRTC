@@ -15,7 +15,7 @@ const port = 8080;
 
 mongoose
   .connect(
-    "mongodb+srv://machadovinish_db_user:pewdiepie@cluster0.htlwlju.mongodb.net/myDatabase?retryWrites=true&w=majority"
+    "mongodb+srv://machadovinish_db_user:pewdiepie@cluster0.htlwlju.mongodb.net/myDatabase?retryWrites=true&w=majority",
   )
   .then(() => {
     console.log("Connected to database");
@@ -38,7 +38,7 @@ app.use(
     origin: "http://localhost:3000",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
-  })
+  }),
 );
 app.use(cookieParser());
 app.use(express.json());
@@ -71,13 +71,9 @@ io.on("connection", (socket) => {
     socket.to(data.Room).emit("recieveAnswer", data);
   });
 
-  socket.on("ice-candidate", async ({ candidate }) => {
-    console.log(candidate);
-    if (candidate && peerConnection.current) {
-      await peerConnection.current.addIceCandidate(
-        new RTCIceCandidate(candidate)
-      );
-    }
+  socket.on("ice-candidate", ({ Room, candidate }) => {
+    console.log("ice ran");
+    socket.to(Room).emit("ice-candidate", { candidate });
   });
 });
 
