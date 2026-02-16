@@ -45,31 +45,59 @@ const page = () => {
   };
 
   const join_room = async () => {
-    const tempRoom = inputString;
+    try {
+      const tempRoom = inputString;
+      console.log("📍 Joining room:", tempRoom);
 
-    await socket?.emit("join-room", { id: tempRoom, name: Userdata.name });
+      await socket?.emit("join-room", { id: tempRoom, name: Userdata.name });
 
-    peerConnection.current = new RTCPeerConnection(configuration);
+      // Create peer connection
+      peerConnection.current = new RTCPeerConnection(configuration);
+      console.log("✅ Peer connection created");
 
-    GetCamera();
+      // SET UP ICE CANDIDATE HANDLER FIRST (before getting camera)
+      peerConnection.current.onicecandidate = (event) => {
+        console.log("🟡 ICE candidate event:", event.candidate);
+        if (event.candidate) {
+          socket?.emit("ice-candidate", {
+            Room: tempRoom,
+            candidate: event.candidate,
+          });
+          console.log("📤 Sent ICE candidate:", event.candidate);
+        }
+      };
 
-    peerConnection.current.onicecandidate = (event) => {
-      console.log("thing ran");
-      if (event.candidate) {
-        socket?.emit("ice-candidate", {
-          Room: tempRoom,
-          candidate: event.candidate,
-        });
-      }
-    };
-    const offer = await peerConnection.current?.createOffer();
+      // Handle remote tracks
+      peerConnection.current.ontrack = (event) => {
+        console.log("🎥 Received remote track:", event.track.kind);
+        console.log("📊 Streams available:", event.streams.length);
+        if (remoteVideo.current && event.streams.length > 0) {
+          console.log("✅ Setting remote video stream");
+          remoteVideo.current.srcObject = event.streams[0];
+        } else if (!event.streams[0]) {
+          console.warn("⚠️ No stream available in track event, using track directly");
+        }
+      };
 
-    if (offer)
-      await peerConnection.current?.setLocalDescription(
+      // NOW get camera
+      await GetCamera();
+      console.log("✅ Camera stream acquired");
+
+      // Create and send offer
+      const offer = await peerConnection.current.createOffer();
+      console.log("✅ Offer created:", offer);
+
+      await peerConnection.current.setLocalDescription(
         new RTCSessionDescription(offer),
       );
-    const Room = inputString;
-    await socket?.emit("offer", { Room, offer });
+      console.log("✅ Local description set (offer)");
+
+      const Room = inputString;
+      await socket?.emit("offer", { Room, offer });
+      console.log("📤 Offer sent to room:", Room);
+    } catch (error) {
+      console.error("❌ Error in join_room:", error);
+    }
   };
 
   useEffect(() => {
@@ -114,26 +142,46 @@ const page = () => {
   useEffect(() => {
     if (!socket) return;
     console.log(socket);
+
     socket?.on("Greeting", async (message: string) => {
       alert(message);
-
       console.log(message);
     });
 
     socket?.on("recieveAnswer", async (data: { Room: string; answer: any }) => {
-      console.log("recieved ans:", data.answer);
-      await peerConnection.current?.setRemoteDescription(data.answer);
-
-      debugPeerConnection();
-
-      if (peerConnection.current) {
-        peerConnection.current.ontrack = (event) => {
-          if (remoteVideo.current) {
-            remoteVideo.current.srcObject = event.streams[0];
-          }
-        };
+      try {
+        console.log("📨 Received answer:", data.answer);
+        await peerConnection.current?.setRemoteDescription(
+          new RTCSessionDescription(data.answer),
+        );
+        console.log("✅ Remote description set (answer)");
+        debugPeerConnection();
+      } catch (error) {
+        console.error("❌ Error setting remote description:", error);
       }
     });
+
+    // Handle remote ICE candidates
+    socket?.on("ice-candidate", async (data: any) => {
+      try {
+        console.log("📨 Received ICE candidate from peer:", data.candidate);
+        if (peerConnection.current && data.candidate) {
+          await peerConnection.current.addIceCandidate(
+            new RTCIceCandidate(data.candidate),
+          );
+          console.log("✅ Added remote ICE candidate");
+        }
+      } catch (error) {
+        console.error("❌ Error adding ICE candidate:", error);
+      }
+    });
+
+    // Cleanup listeners
+    return () => {
+      socket.off("Greeting");
+      socket.off("recieveAnswer");
+      socket.off("ice-candidate");
+    };
   }, [socket]);
 
   return (
@@ -155,6 +203,8 @@ const page = () => {
               ref={remoteVideo}
               className="w-[1000px] h-[80vh] rounded-xl m-10"
               autoPlay
+              playsInline
+              muted={false}
             ></video>
             <div className="bg-gray-800 h-[80vh] w-[600px]  rounded-xl"></div>
           </div>

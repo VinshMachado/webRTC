@@ -88,35 +88,72 @@ const page = () => {
   };
 
   const handelRecieveOffer = async (data: { Room: string; offer: any }) => {
-    console.log("this is backend:", data);
+    try {
+      console.log("📨 Received offer from:", data.Room);
 
-    await peerConnection.current?.setRemoteDescription(data.offer);
-    const answer = await peerConnection.current?.createAnswer();
+      if (!peerConnection.current) {
+        console.error("❌ Peer connection not initialized!");
+        return;
+      }
 
-    await peerConnection.current?.setLocalDescription(answer);
+      // Set remote description
+      await peerConnection.current.setRemoteDescription(
+        new RTCSessionDescription(data.offer),
+      );
+      console.log("✅ Remote description set");
 
-    console.log(roomId);
-    const Room = data.Room;
-    console.log("sent answer", answer);
-    await socket?.emit("answer", { Room, answer });
-    debugPeerConnection();
+      // Create and set answer
+      const answer = await peerConnection.current.createAnswer();
+      console.log("✅ Answer created:", answer);
+
+      await peerConnection.current.setLocalDescription(answer);
+      console.log("✅ Local description set (answer)");
+
+      // Send answer back
+      const Room = data.Room;
+      await socket?.emit("answer", { Room, answer });
+      console.log("📤 Sent answer back to:", Room);
+
+      debugPeerConnection();
+    } catch (error) {
+      console.error("❌ Error in handelRecieveOffer:", error);
+    }
   };
 
   const establishPeer = async () => {
-    peerConnection.current = new RTCPeerConnection(configuration);
-    await GetCamera();
-    if (peerConnection.current) {
+    try {
+      peerConnection.current = new RTCPeerConnection(configuration);
+      console.log("✅ Peer connection created");
+
+      // Set up ICE candidate handler BEFORE any offer/answer
       peerConnection.current.onicecandidate = (event) => {
-        console.log("thing ran");
+        console.log("🟡 ICE candidate event:", event.candidate);
         if (event.candidate) {
           if (socket) {
             socket.emit("ice-candidate", {
               Room: roomId,
               candidate: event.candidate,
             });
+            console.log("📤 Sent ICE candidate:", event.candidate);
           }
         }
       };
+
+      // Handle remote tracks
+      peerConnection.current.ontrack = (event) => {
+        console.log("🎥 Received remote track:", event.track.kind);
+        console.log("📊 Streams available:", event.streams.length);
+        if (remoteVideo.current && event.streams.length > 0) {
+          console.log("✅ Setting remote video stream");
+          remoteVideo.current.srcObject = event.streams[0];
+        } else if (!event.streams[0]) {
+          console.warn(
+            "⚠️ No stream available in track event, using track directly",
+          );
+        }
+      };
+    } catch (error) {
+      console.error("❌ Error in establishPeer:", error);
     }
   };
 
@@ -133,6 +170,28 @@ const page = () => {
     socket.on("recieveOffer", async (data) => {
       handelRecieveOffer(data);
     });
+
+    // Handle remote ICE candidates from peer
+    socket.on("ice-candidate", async (data) => {
+      try {
+        console.log("📨 Received ICE candidate from peer:", data.candidate);
+        if (peerConnection.current && data.candidate) {
+          await peerConnection.current.addIceCandidate(
+            new RTCIceCandidate(data.candidate),
+          );
+          console.log("✅ Added remote ICE candidate");
+        }
+      } catch (error) {
+        console.error("❌ Error adding ICE candidate:", error);
+      }
+    });
+
+    // Cleanup listeners
+    return () => {
+      socket.off("Greeting");
+      socket.off("recieveOffer");
+      socket.off("ice-candidate");
+    };
   }, [socket]);
 
   return (
@@ -154,6 +213,8 @@ const page = () => {
               ref={remoteVideo}
               className="w-[1000px] h-[80vh] rounded-xl m-10"
               autoPlay
+              playsInline
+              muted={false}
             ></video>
             <div className="bg-gray-800 h-[80vh] w-[600px]  rounded-xl"></div>
           </div>
@@ -175,8 +236,8 @@ const page = () => {
              active:scale-95"
             onClick={async () => {
               setRoomid(inputString);
-
               join_room();
+              await GetCamera();
             }}
           >
             Create a meeting ID
