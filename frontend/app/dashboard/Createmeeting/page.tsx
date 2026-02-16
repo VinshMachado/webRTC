@@ -16,6 +16,17 @@ const configuration = {
 const page = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
+  useEffect(() => {
+    if (!socket) {
+      const newSocket = io(process.env.NEXT_PUBLIC_BACKEND);
+      setSocket(newSocket);
+    }
+
+    return () => {
+      socket?.disconnect();
+    };
+  }, []);
+
   const Userdata = UserDetails((state) => state.Userdata);
 
   const [roomId, setRoomid] = useState<string | null>();
@@ -34,23 +45,47 @@ const page = () => {
   const GetCamera = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
+      audio: true,
     });
 
     if (localVideo.current) {
       localVideo.current.srcObject = stream;
     }
+
+    if (peerConnection.current) {
+      stream.getTracks().forEach((track) => {
+        peerConnection.current?.addTrack(track, stream);
+      });
+    }
   };
 
-  useEffect(() => {
-    if (!socket) {
-      const newSocket = io(process.env.NEXT_PUBLIC_BACKEND);
-      setSocket(newSocket);
+  const debugPeerConnection = () => {
+    if (!peerConnection.current) {
+      console.log("❌ Peer connection is null");
+      return;
     }
 
-    return () => {
-      socket?.disconnect();
-    };
-  }, []);
+    console.log("=== Peer Connection Debug ===");
+    console.log("Connection State:", peerConnection.current.connectionState);
+    console.log(
+      "ICE Connection State:",
+      peerConnection.current.iceConnectionState,
+    );
+    console.log(
+      "ICE Gathering State:",
+      peerConnection.current.iceGatheringState,
+    );
+    console.log("Signaling State:", peerConnection.current.signalingState);
+    console.log(
+      "\nLocal Description:",
+      peerConnection.current.localDescription,
+    );
+    console.log(
+      "Remote Description:",
+      peerConnection.current.remoteDescription,
+    );
+    console.log("========================");
+  };
 
   const handelRecieveOffer = async (data: { Room: string; offer: any }) => {
     console.log("this is backend:", data);
@@ -64,20 +99,31 @@ const page = () => {
     const Room = data.Room;
     console.log("sent answer", answer);
     await socket?.emit("answer", { Room, answer });
+    debugPeerConnection();
+  };
+
+  const establishPeer = async () => {
+    peerConnection.current = new RTCPeerConnection(configuration);
+    await GetCamera();
+    if (peerConnection.current) {
+      peerConnection.current.onicecandidate = (event) => {
+        console.log("thing ran");
+        if (event.candidate) {
+          if (socket) {
+            socket.emit("ice-candidate", {
+              Room: roomId,
+              candidate: event.candidate,
+            });
+          }
+        }
+      };
+    }
   };
 
   useEffect(() => {
     if (!socket) return;
-    peerConnection.current = new RTCPeerConnection(configuration);
 
-    peerConnection.current.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket?.emit("ice-candidate", {
-          Room: inputString,
-          candidate: event.candidate,
-        });
-      }
-    };
+    establishPeer();
 
     socket?.on("Greeting", (message: string) => {
       alert(message);
@@ -88,10 +134,6 @@ const page = () => {
       handelRecieveOffer(data);
     });
   }, [socket]);
-
-  useEffect(() => {
-    GetCamera();
-  }, []);
 
   return (
     <>
@@ -135,7 +177,6 @@ const page = () => {
               setRoomid(inputString);
 
               join_room();
-              await GetCamera();
             }}
           >
             Create a meeting ID
