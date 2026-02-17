@@ -75,7 +75,9 @@ const page = () => {
           console.log("✅ Setting remote video stream");
           remoteVideo.current.srcObject = event.streams[0];
         } else if (!event.streams[0]) {
-          console.warn("⚠️ No stream available in track event, using track directly");
+          console.warn(
+            "⚠️ No stream available in track event, using track directly",
+          );
         }
       };
 

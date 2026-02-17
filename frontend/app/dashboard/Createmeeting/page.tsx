@@ -202,21 +202,25 @@ const page = () => {
 
           <h1 className="ml-7">Your RoomId:{roomId}</h1>
 
-          <div className="flex justify-center bg-gray-950 w-full h-[90vh]  items-center p-5 flex-wrap">
-            <video
-              ref={localVideo}
-              className="w-[1000px] h-[80vh] rounded-xl m-10"
-              autoPlay
-            ></video>
+          <div className="flex justify-center bg-gray-950 w-full h-auto p-5  items-start p-5 flex flex-wrap">
+            <div className="h-[800px] w-auto flex justify-center items-center  flex-col">
+              <video
+                ref={localVideo}
+                className="w-[70%] h-[50vh] rounded-xl m-5"
+                autoPlay
+              ></video>
 
-            <video
-              ref={remoteVideo}
-              className="w-[1000px] h-[80vh] rounded-xl m-10"
-              autoPlay
-              playsInline
-              muted={false}
-            ></video>
-            <div className="bg-gray-800 h-[80vh] w-[600px]  rounded-xl"></div>
+              <video
+                ref={remoteVideo}
+                className="w-[70%] h-[50vh] rounded-xl m-5 "
+                autoPlay
+                playsInline
+                muted={false}
+              ></video>
+            </div>
+            <div className="bg-gray-800 sm:ml-10 h-[80vh]  w-[800px] md:w-[50%] text-white rounded-xl">
+              dfsfdsf
+            </div>
           </div>
         </>
       ) : (
