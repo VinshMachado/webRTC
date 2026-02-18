@@ -61,7 +61,11 @@ const page = () => {
       const tempRoom = inputString;
       console.log("📍 Joining room:", tempRoom);
 
-      await socket?.emit("join-room", { id: tempRoom, name: Userdata.name });
+      await socket?.emit("join-room", {
+        id: tempRoom,
+        name: Userdata.name,
+        profile: Userdata.profile,
+      });
 
       // Create peer connection
       peerConnection.current = new RTCPeerConnection(configuration);
@@ -131,12 +135,14 @@ const page = () => {
 
     socket?.on("Greeting", async (message: string) => {
       alert(message);
-      console.log(message);
     });
 
-    socket?.on("messageRecieved", async (message: string) => {
-      alert("Message recieved ");
-      console.log(message);
+    socket.on("recieveMessage", async (data: string) => {
+      const prof = Userdata.profile;
+      SetMessages((prev) => [
+        ...prev,
+        { message: data, image: prof, sender: "remote" },
+      ]);
     });
 
     socket?.on("recieveAnswer", async (data: { Room: string; answer: any }) => {
@@ -214,7 +220,11 @@ const page = () => {
                       if (e.key === "Enter" && text.trim()) {
                         SetMessages((prev) => [
                           ...prev,
-                          { message: text, image: "sadasd", sender: "local" },
+                          {
+                            message: text,
+                            image: Userdata.profile,
+                            sender: "user",
+                          },
                         ]);
 
                         await socket.emit("sendMessage", { roomId, text });
@@ -231,7 +241,7 @@ const page = () => {
                       if (text.trim()) {
                         SetMessages((prev) => [
                           ...prev,
-                          { message: text, image: "sadasd", sender: "local" },
+                          { message: text, image: "sadasd", sender: "user" },
                         ]);
                         await socket.emit("sendMessage", { roomId, text });
                         setText("");

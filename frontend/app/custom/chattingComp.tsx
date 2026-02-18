@@ -14,18 +14,17 @@ interface MessageSchema {
 interface Props {
   messages: MessageSchema[];
 }
-export default function ChattingComp(messages: Props) {
+export default function ChattingComp(data: Props) {
   return (
-    <div className="max-w-md space-y-4 p-4">
-      {messages.messages.map((data) =>
+    <div className="max-w-full space-y-4 p-4">
+      {data.messages.map((data) =>
         data.sender == "user" ? (
           <>
             <ChatBubble variant="received">
-              <ChatBubbleAvatar
-                fallback="AI"
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&q=80&crop=faces&fit=crop"
-              />
-              <ChatBubbleMessage>{data.message}</ChatBubbleMessage>
+              <ChatBubbleAvatar fallback="AI" src={data.image} />
+              <ChatBubbleMessage className="text-black">
+                {data.message}
+              </ChatBubbleMessage>
             </ChatBubble>
           </>
         ) : (

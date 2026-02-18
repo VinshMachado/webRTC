@@ -38,6 +38,11 @@ const page = () => {
   }, []);
 
   const Userdata = UserDetails((state) => state.Userdata);
+  const [RemoteData, serRemoteData] = useState<{
+    message: string;
+    name: string;
+    profile: string;
+  }>();
 
   const [roomId, setRoomid] = useState<string | null>();
   const [inputString, setInputString] = useState<string | null>(null);
@@ -142,17 +147,25 @@ const page = () => {
 
     establishPeer();
 
-    socket?.on("Greeting", (message: string) => {
-      alert(message);
-      console.log(message);
-    });
+    socket?.on(
+      "Greeting",
+      (data: { message: string; name: string; profile: string }) => {
+        alert(data.message);
+        console.log("greeting", data);
+        serRemoteData(data);
+      },
+    );
 
     socket.on("recieveOffer", async (data) => {
       handelRecieveOffer(data);
     });
 
     socket.on("recieveMessage", async (data) => {
-      alert(data);
+      const prof = Userdata.profile;
+      SetMessages((prev) => [
+        ...prev,
+        { message: data, image: prof, sender: "remote" },
+      ]);
     });
 
     // Handle remote ICE candidates from peer
@@ -219,7 +232,7 @@ const page = () => {
                       if (e.key === "Enter" && text.trim()) {
                         SetMessages((prev) => [
                           ...prev,
-                          { message: text, image: "sadasd", sender: "local" },
+                          { message: text, image: "sadasd", sender: "user" },
                         ]);
 
                         await socket?.emit("sendMessage", { roomId, text });
@@ -236,7 +249,7 @@ const page = () => {
                       if (text.trim()) {
                         SetMessages((prev) => [
                           ...prev,
-                          { message: text, image: "sadasd", sender: "local" },
+                          { message: text, image: "sadasd", sender: "user" },
                         ]);
                         await socket?.emit("sendMessage", { roomId, text });
                         setText("");
