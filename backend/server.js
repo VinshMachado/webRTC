@@ -7,6 +7,7 @@ import userRouter from "./view/user.js";
 import cors from "cors";
 import { Server } from "socket.io";
 import http from "http";
+import InitalizeSocket from "./controller/socket.js";
 dotenv.config();
 const app = express();
 const port = 8080;
@@ -26,11 +27,7 @@ mongoose
 
 // -------------------making http server
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000",
-  },
-});
+
 //--------------------Middlewares
 app.use(express.json());
 app.use(
@@ -47,35 +44,7 @@ app.use(express.json());
 app.use("/auth", GoogleAuthRouter);
 app.use("/user", userRouter);
 
-//---------------------Socket Io
-
-io.on("connection", (socket) => {
-  console.log("socket: ", socket.id);
-  socket.on("join-room", (room) => {
-    console.log(room.id);
-    const roomID = room?.id?.trim();
-
-    socket.join(roomID);
-
-    console.log(`${socket.id} joined the room`, roomID);
-    socket.to(`${roomID}`).emit("Greeting", `${room.name} Joined the meeting`);
-  });
-
-  socket.on("offer", (data) => {
-    console.log("offer side:", data);
-    socket.to(data.Room).emit("recieveOffer", data);
-  });
-
-  socket.on("answer", (data) => {
-    console.log("answer side:", data);
-    socket.to(data.Room).emit("recieveAnswer", data);
-  });
-
-  socket.on("ice-candidate", ({ Room, candidate }) => {
-    console.log("ice ran");
-    socket.to(Room).emit("ice-candidate", { candidate });
-  });
-});
+InitalizeSocket(server);
 
 //------------------------Listen
 
