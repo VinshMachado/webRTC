@@ -1,9 +1,18 @@
 "use client";
 import React, { useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { useRef, useState } from "react";
 
 import UserDetails from "@/Storage/Store";
 import { io, Socket } from "socket.io-client";
+import { Button } from "@/components/ui/button";
+import ChattingComp from "@/app/custom/chattingComp";
+import { SendHorizonal } from "lucide-react";
+interface MessageSchema {
+  message: string;
+  image: string;
+  sender: string;
+}
 
 const configuration = {
   iceServers: [
@@ -21,6 +30,9 @@ const page = () => {
 
   const [roomId, setRoomid] = useState<string | null>();
   const [inputString, setInputString] = useState<string | null>();
+
+  const [messages, SetMessages] = useState<MessageSchema[]>([]);
+  const [text, setText] = useState("");
 
   const localVideo = useRef<HTMLVideoElement | null>(null);
   const remoteVideo = useRef<HTMLVideoElement | null>(null);
@@ -113,34 +125,6 @@ const page = () => {
     };
   }, [socket]);
 
-  const debugPeerConnection = () => {
-    if (!peerConnection.current) {
-      console.log("❌ Peer connection is null");
-      return;
-    }
-
-    console.log("=== Peer Connection Debug ===");
-    console.log("Connection State:", peerConnection.current.connectionState);
-    console.log(
-      "ICE Connection State:",
-      peerConnection.current.iceConnectionState,
-    );
-    console.log(
-      "ICE Gathering State:",
-      peerConnection.current.iceGatheringState,
-    );
-    console.log("Signaling State:", peerConnection.current.signalingState);
-    console.log(
-      "\nLocal Description:",
-      peerConnection.current.localDescription,
-    );
-    console.log(
-      "Remote Description:",
-      peerConnection.current.remoteDescription,
-    );
-    console.log("========================");
-  };
-
   useEffect(() => {
     if (!socket) return;
     console.log(socket);
@@ -150,16 +134,19 @@ const page = () => {
       console.log(message);
     });
 
+    socket?.on("messageRecieved", async (message: string) => {
+      alert("Message recieved ");
+      console.log(message);
+    });
+
     socket?.on("recieveAnswer", async (data: { Room: string; answer: any }) => {
       try {
         console.log("📨 Received answer:", data.answer);
         await peerConnection.current?.setRemoteDescription(
           new RTCSessionDescription(data.answer),
         );
-        console.log("✅ Remote description set (answer)");
-        debugPeerConnection();
       } catch (error) {
-        console.error("❌ Error setting remote description:", error);
+        console.error(" Error setting remote description:", error);
       }
     });
 
@@ -171,10 +158,9 @@ const page = () => {
           await peerConnection.current.addIceCandidate(
             new RTCIceCandidate(data.candidate),
           );
-          console.log("✅ Added remote ICE candidate");
         }
       } catch (error) {
-        console.error("❌ Error adding ICE candidate:", error);
+        console.error(" Error adding ICE candidate:", error);
       }
     });
 
@@ -198,20 +184,64 @@ const page = () => {
             <div className="h-[800px] w-auto flex justify-center items-center  flex-col">
               <video
                 ref={localVideo}
-                className="w-[70%] h-[50vh] rounded-xl m-5"
+                className="w-[100%] h-[50vh] sm:w-[90%] sm:h-[50%] rounded-xl sm:m-1"
                 autoPlay
               ></video>
 
               <video
                 ref={remoteVideo}
-                className="w-[70%] h-[50vh] rounded-xl m-5 "
+                className="w-[100%] h-[50vh] sm:w-[90%] sm:h-[50%] rounded-xl sm:m-1"
                 autoPlay
                 playsInline
                 muted={false}
               ></video>
             </div>
-            <div className="bg-gray-800 sm:ml-10 h-[80vh]  w-[800px] md:w-[50%] text-white rounded-xl">
-              dfsfdsf
+
+            <div className="bg-gray-800 sm:ml-10 h-[80vh] sm:mt-5  w-[800px] md:w-[50%] text-white rounded-xl flex flex-col justify-end">
+              <ChattingComp messages={messages} />
+              <div className="p-4 bg-[#313338] border-t border-[#1e1f22] rounded-sm">
+                <div className="flex items-center gap-3 bg-[#383a40] rounded-xl px-4 py-2 shadow-inner ">
+                  {/* Input */}
+                  <input
+                    placeholder="Message #general"
+                    value={text}
+                    onChange={(e) => {
+                      setText(e.target.value);
+                    }}
+                    onKeyDown={async (
+                      e: React.KeyboardEvent<HTMLInputElement>,
+                    ) => {
+                      if (e.key === "Enter" && text.trim()) {
+                        SetMessages((prev) => [
+                          ...prev,
+                          { message: text, image: "sadasd", sender: "local" },
+                        ]);
+
+                        await socket.emit("sendMessage", { roomId, text });
+                        setText("");
+                      }
+                    }}
+                    className="flex-1 bg-transparent text-sm text-gray-200 placeholder:text-gray-400 focus:outline-none"
+                  />
+
+                  {/* Send Button */}
+                  <Button
+                    className="bg-[#5865F2] hover:bg-[#4752c4] rounded-lg px-3 h-9"
+                    onClick={async () => {
+                      if (text.trim()) {
+                        SetMessages((prev) => [
+                          ...prev,
+                          { message: text, image: "sadasd", sender: "local" },
+                        ]);
+                        await socket.emit("sendMessage", { roomId, text });
+                        setText("");
+                      }
+                    }}
+                  >
+                    <SendHorizonal size={18} />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </>
