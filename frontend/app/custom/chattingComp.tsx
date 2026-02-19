@@ -8,7 +8,7 @@ import { Copy, RefreshCcw } from "lucide-react";
 
 interface MessageSchema {
   message: string;
-  image: string;
+  image: string | null;
   sender: string;
 }
 interface Props {
@@ -21,7 +21,10 @@ export default function ChattingComp(data: Props) {
         data.sender == "user" ? (
           <>
             <ChatBubble variant="received">
-              <ChatBubbleAvatar fallback="AI" src={data.image} />
+              <ChatBubbleAvatar
+                fallback="AI"
+                src={data.image ? data.image : ""}
+              />
               <ChatBubbleMessage className="text-black">
                 {data.message}
               </ChatBubbleMessage>
@@ -32,7 +35,7 @@ export default function ChattingComp(data: Props) {
             <ChatBubble variant="sent">
               <ChatBubbleAvatar
                 fallback="US"
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&q=80&crop=faces&fit=crop"
+                src={data.image ? data.image : ""}
               />
               <ChatBubbleMessage variant="sent">
                 {data.message}

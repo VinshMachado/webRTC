@@ -2,12 +2,16 @@
 import React, { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useRef, useState } from "react";
-
+import { Hash } from "lucide-react";
+import { AvatarImage } from "@/components/ui/avatar";
+import { AvatarFallback } from "@/components/ui/avatar";
+import { Avatar } from "@/components/ui/avatar";
 import UserDetails from "@/Storage/Store";
 import { io, Socket } from "socket.io-client";
 import { Button } from "@/components/ui/button";
 import ChattingComp from "@/app/custom/chattingComp";
 import { SendHorizonal } from "lucide-react";
+import Videocomponent from "../Createmeeting/videocomponent";
 interface MessageSchema {
   message: string;
   image: string;
@@ -32,7 +36,21 @@ const page = () => {
   const [inputString, setInputString] = useState<string | null>();
 
   const [messages, SetMessages] = useState<MessageSchema[]>([]);
+  //chating textThing
   const [text, setText] = useState("");
+  const [RemoteData, setRemoteData] = useState<{
+    name: string;
+    profile: string;
+  }>({
+    name: "nubie",
+    profile:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS36J6t0SbHUeuuQ0nq2j9ki507M79Pu-oT6g&s",
+  });
+
+  const remoteNameRef = useRef<string>("nubie");
+  const remoteProfileRef = useRef<string>(
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS36J6t0SbHUeuuQ0nq2j9ki507M79Pu-oT6g&s",
+  );
 
   const localVideo = useRef<HTMLVideoElement | null>(null);
   const remoteVideo = useRef<HTMLVideoElement | null>(null);
@@ -138,23 +156,36 @@ const page = () => {
     });
 
     socket.on("recieveMessage", async (data: string) => {
-      const prof = Userdata.profile;
+      const prof = remoteProfileRef.current;
       SetMessages((prev) => [
         ...prev,
         { message: data, image: prof, sender: "remote" },
       ]);
     });
 
-    socket?.on("recieveAnswer", async (data: { Room: string; answer: any }) => {
-      try {
-        console.log("📨 Received answer:", data.answer);
-        await peerConnection.current?.setRemoteDescription(
-          new RTCSessionDescription(data.answer),
-        );
-      } catch (error) {
-        console.error(" Error setting remote description:", error);
-      }
-    });
+    socket?.on(
+      "recieveAnswer",
+      async (data: { Room: string; answer: any; Userdata: any }) => {
+        try {
+          console.log("📨 Received answer:", data.answer);
+
+          // update ref so recieveMessage uses the latest profile
+          if (data.Userdata && data.Userdata.profile) {
+            remoteProfileRef.current = data.Userdata.profile;
+            remoteNameRef.current = data.Userdata.name;
+            setRemoteData({
+              name: data.Userdata.name,
+              profile: data.Userdata.profile,
+            });
+          }
+          await peerConnection.current?.setRemoteDescription(
+            new RTCSessionDescription(data.answer),
+          );
+        } catch (error) {
+          console.error(" Error setting remote description:", error);
+        }
+      },
+    );
 
     // Handle remote ICE candidates
     socket?.on("ice-candidate", async (data: any) => {
@@ -182,78 +213,42 @@ const page = () => {
     <>
       {roomId ? (
         <>
-          <div className="w-full h-20 bg-slate-900">{Userdata.name} </div>
+          <div className="h-14 px-4 flex items-center justify-between bg-[#313338] border-b border-[#1e1f22] shadow-sm">
+            {/* Left section */}
+            <div className="flex items-center gap-3">
+              <Hash size={20} className="text-gray-400" />
 
-          <h1 className="ml-7">Your RoomId:{roomId}</h1>
-
-          <div className="flex justify-center bg-gray-950 w-full h-auto p-5  items-start p-5 flex flex-wrap">
-            <div className="h-[800px] w-auto flex justify-center items-center  flex-col">
-              <video
-                ref={localVideo}
-                className="w-[100%] h-[50vh] sm:w-[90%] sm:h-[50%] rounded-xl sm:m-1"
-                autoPlay
-              ></video>
-
-              <video
-                ref={remoteVideo}
-                className="w-[100%] h-[50vh] sm:w-[90%] sm:h-[50%] rounded-xl sm:m-1"
-                autoPlay
-                playsInline
-                muted={false}
-              ></video>
-            </div>
-
-            <div className="bg-gray-800 sm:ml-10 h-[80vh] sm:mt-5  w-[800px] md:w-[50%] text-white rounded-xl flex flex-col justify-end">
-              <ChattingComp messages={messages} />
-              <div className="p-4 bg-[#313338] border-t border-[#1e1f22] rounded-sm">
-                <div className="flex items-center gap-3 bg-[#383a40] rounded-xl px-4 py-2 shadow-inner ">
-                  {/* Input */}
-                  <input
-                    placeholder="Message #general"
-                    value={text}
-                    onChange={(e) => {
-                      setText(e.target.value);
-                    }}
-                    onKeyDown={async (
-                      e: React.KeyboardEvent<HTMLInputElement>,
-                    ) => {
-                      if (e.key === "Enter" && text.trim()) {
-                        SetMessages((prev) => [
-                          ...prev,
-                          {
-                            message: text,
-                            image: Userdata.profile,
-                            sender: "user",
-                          },
-                        ]);
-
-                        await socket.emit("sendMessage", { roomId, text });
-                        setText("");
-                      }
-                    }}
-                    className="flex-1 bg-transparent text-sm text-gray-200 placeholder:text-gray-400 focus:outline-none"
-                  />
-
-                  {/* Send Button */}
-                  <Button
-                    className="bg-[#5865F2] hover:bg-[#4752c4] rounded-lg px-3 h-9"
-                    onClick={async () => {
-                      if (text.trim()) {
-                        SetMessages((prev) => [
-                          ...prev,
-                          { message: text, image: "sadasd", sender: "user" },
-                        ]);
-                        await socket.emit("sendMessage", { roomId, text });
-                        setText("");
-                      }
-                    }}
-                  >
-                    <SendHorizonal size={18} />
-                  </Button>
-                </div>
+              <div className="flex flex-col leading-tight">
+                <span className="text-white font-semibold text-sm">
+                  {RemoteData.name}
+                </span>
+                <span className="text-gray-400 text-xs">Online</span>
               </div>
             </div>
+
+            <div className="flex flex-col leading-tight">
+              <span className="text-white font-semibold text-sm">
+                Your RoomId:{"   " + roomId}
+              </span>
+            </div>
+
+            {/* Right section avatar */}
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={RemoteData.profile} />
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
           </div>
+
+          <Videocomponent
+            localVideo={localVideo}
+            remoteVideo={remoteVideo}
+            messages={messages}
+            text={text}
+            setText={setText}
+            socket={socket}
+            roomId={roomId}
+            SetMessages={SetMessages}
+          />
         </>
       ) : (
         <div className="w-full h-[100vh] bg-slate-900 flex justify-center items-center">

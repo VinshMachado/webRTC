@@ -4,9 +4,11 @@ import { useRef, useState } from "react";
 
 import UserDetails from "@/Storage/Store";
 import { io, Socket } from "socket.io-client";
-import { Button } from "@/components/ui/button";
-import ChattingComp from "@/app/custom/chattingComp";
-import { SendHorizonal } from "lucide-react";
+import { Hash } from "lucide-react";
+import { AvatarImage } from "@/components/ui/avatar";
+import { AvatarFallback } from "@/components/ui/avatar";
+import { Avatar } from "@/components/ui/avatar";
+import Videocomponent from "./videocomponent";
 interface MessageSchema {
   message: string;
   image: string;
@@ -25,8 +27,12 @@ const page = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [messages, SetMessages] = useState<MessageSchema[]>([]);
   const [text, setText] = useState("");
+  const [inputString, setInputString] = useState<string | null>(null);
 
   useEffect(() => {
+    setInputString(
+      crypto.randomUUID().replace(/-/g, "").slice(0, 7).toUpperCase(),
+    );
     if (!socket) {
       const newSocket = io(process.env.NEXT_PUBLIC_BACKEND);
       setSocket(newSocket);
@@ -42,10 +48,18 @@ const page = () => {
     message: string;
     name: string;
     profile: string;
-  }>();
+  }>({
+    message: "",
+    name: "nubie",
+    profile:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS36J6t0SbHUeuuQ0nq2j9ki507M79Pu-oT6g&s",
+  });
+
+  const remoteProfileRef = useRef<string>(
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS36J6t0SbHUeuuQ0nq2j9ki507M79Pu-oT6g&s",
+  );
 
   const [roomId, setRoomid] = useState<string | null>();
-  const [inputString, setInputString] = useState<string | null>(null);
 
   const localVideo = useRef<HTMLVideoElement | null>(null);
   const remoteVideo = useRef<HTMLVideoElement | null>(null);
@@ -76,10 +90,8 @@ const page = () => {
 
   const handelRecieveOffer = async (data: { Room: string; offer: any }) => {
     try {
-      console.log("📨 Received offer from:", data.Room);
-
       if (!peerConnection.current) {
-        console.error("❌ Peer connection not initialized!");
+        console.error(" Peer connection not initialize");
         return;
       }
 
@@ -87,49 +99,39 @@ const page = () => {
       await peerConnection.current.setRemoteDescription(
         new RTCSessionDescription(data.offer),
       );
-      console.log("✅ Remote description set");
 
       // Create and set answer
       const answer = await peerConnection.current.createAnswer();
-      console.log("✅ Answer created:", answer);
 
       await peerConnection.current.setLocalDescription(answer);
-      console.log("✅ Local description set (answer)");
 
       // Send answer back
       const Room = data.Room;
-      await socket?.emit("answer", { Room, answer });
-      console.log("📤 Sent answer back to:", Room);
+      await socket?.emit("answer", { Room, answer, Userdata });
     } catch (error) {
-      console.error("❌ Error in handelRecieveOffer:", error);
+      console.error(" Error in handelRecieveOffer:", error);
     }
   };
 
   const establishPeer = async () => {
     try {
       peerConnection.current = new RTCPeerConnection(configuration);
-      console.log("✅ Peer connection created");
 
       // Set up ICE candidate handler BEFORE any offer/answer
       peerConnection.current.onicecandidate = (event) => {
-        console.log("🟡 ICE candidate event:", event.candidate);
         if (event.candidate) {
           if (socket) {
             socket.emit("ice-candidate", {
               Room: roomId,
               candidate: event.candidate,
             });
-            console.log("📤 Sent ICE candidate:", event.candidate);
           }
         }
       };
 
       // Handle remote tracks
       peerConnection.current.ontrack = (event) => {
-        console.log("🎥 Received remote track:", event.track.kind);
-        console.log("📊 Streams available:", event.streams.length);
         if (remoteVideo.current && event.streams.length > 0) {
-          console.log("✅ Setting remote video stream");
           remoteVideo.current.srcObject = event.streams[0];
         } else if (!event.streams[0]) {
           console.warn(
@@ -138,9 +140,11 @@ const page = () => {
         }
       };
     } catch (error) {
-      console.error("❌ Error in establishPeer:", error);
+      console.error(" Error in establishPeer:", error);
     }
   };
+
+  // socket ka control
 
   useEffect(() => {
     if (!socket) return;
@@ -153,6 +157,7 @@ const page = () => {
         alert(data.message);
         console.log("greeting", data);
         serRemoteData(data);
+        remoteProfileRef.current = data.profile;
       },
     );
 
@@ -161,7 +166,9 @@ const page = () => {
     });
 
     socket.on("recieveMessage", async (data) => {
-      const prof = Userdata.profile;
+      // read from ref to ensure we use the latest remote profile
+      const prof = remoteProfileRef.current;
+      console.log("using profile for remote message:", prof);
       SetMessages((prev) => [
         ...prev,
         { message: data, image: prof, sender: "remote" },
@@ -171,15 +178,13 @@ const page = () => {
     // Handle remote ICE candidates from peer
     socket.on("ice-candidate", async (data) => {
       try {
-        console.log("📨 Received ICE candidate from peer:", data.candidate);
         if (peerConnection.current && data.candidate) {
           await peerConnection.current.addIceCandidate(
             new RTCIceCandidate(data.candidate),
           );
-          console.log("✅ Added remote ICE candidate");
         }
       } catch (error) {
-        console.error("❌ Error adding ICE candidate:", error);
+        console.error(" Error adding ICE candidate:", error);
       }
     });
 
@@ -187,6 +192,7 @@ const page = () => {
     return () => {
       socket.off("Greeting");
       socket.off("recieveOffer");
+      socket.off("recieveMessage");
       socket.off("ice-candidate");
     };
   }, [socket]);
@@ -195,83 +201,45 @@ const page = () => {
     <>
       {roomId ? (
         <>
-          <div className="w-full h-20 bg-slate-900">{Userdata.name} </div>
+          <div className="h-14 px-4 flex items-center justify-between bg-[#313338] border-b border-[#1e1f22] shadow-sm">
+            {/* Left section */}
+            <div className="flex items-center gap-3">
+              <Hash size={20} className="text-gray-400" />
 
-          <h1 className="ml-7">Your RoomId:{roomId}</h1>
-
-          <div className="flex justify-center bg-gray-950 w-full h-auto p-5  items-start p-5 flex flex-wrap">
-            <div className="h-[800px] w-auto flex justify-center items-center  flex-col">
-              <video
-                ref={localVideo}
-                className="w-[100%] h-[50vh] sm:w-[90%] sm:h-[50%] rounded-xl sm:m-1"
-                autoPlay
-              ></video>
-
-              <video
-                ref={remoteVideo}
-                className="w-[100%] h-[50vh] sm:w-[90%] sm:h-[50%] rounded-xl sm:m-1 "
-                autoPlay
-                playsInline
-                muted={false}
-              ></video>
-            </div>
-            <div className="bg-gray-800 sm:ml-10 h-[80vh] sm:mt-5  w-[800px] md:w-[50%] text-white rounded-xl flex flex-col justify-end">
-              <ChattingComp messages={messages} />
-              <div className="p-4 bg-[#313338] border-t border-[#1e1f22] rounded-sm">
-                <div className="flex items-center gap-3 bg-[#383a40] rounded-xl px-4 py-2 shadow-inner ">
-                  {/* Input */}
-                  <input
-                    placeholder="Message #general"
-                    value={text}
-                    onChange={(e) => {
-                      setText(e.target.value);
-                    }}
-                    onKeyDown={async (
-                      e: React.KeyboardEvent<HTMLInputElement>,
-                    ) => {
-                      if (e.key === "Enter" && text.trim()) {
-                        SetMessages((prev) => [
-                          ...prev,
-                          { message: text, image: "sadasd", sender: "user" },
-                        ]);
-
-                        await socket?.emit("sendMessage", { roomId, text });
-                        setText("");
-                      }
-                    }}
-                    className="flex-1 bg-transparent text-sm text-gray-200 placeholder:text-gray-400 focus:outline-none"
-                  />
-
-                  {/* Send Button */}
-                  <Button
-                    className="bg-[#5865F2] hover:bg-[#4752c4] rounded-lg px-3 h-9"
-                    onClick={async () => {
-                      if (text.trim()) {
-                        SetMessages((prev) => [
-                          ...prev,
-                          { message: text, image: "sadasd", sender: "user" },
-                        ]);
-                        await socket?.emit("sendMessage", { roomId, text });
-                        setText("");
-                      }
-                    }}
-                  >
-                    <SendHorizonal size={18} />
-                  </Button>
-                </div>
+              <div className="flex flex-col leading-tight">
+                <span className="text-white font-semibold text-sm">
+                  {RemoteData.name}
+                </span>
+                <span className="text-gray-400 text-xs">Online</span>
               </div>
             </div>
+            <div className="flex flex-col leading-tight">
+              <span className="text-white font-semibold text-sm">
+                Your RoomId:{"   " + roomId}
+              </span>
+            </div>
+
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={remoteProfileRef.current} />
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
           </div>
+          <Videocomponent
+            localVideo={localVideo}
+            remoteVideo={remoteVideo}
+            messages={messages}
+            text={text}
+            setText={setText}
+            socket={socket}
+            roomId={roomId}
+            SetMessages={SetMessages}
+          />
         </>
       ) : (
         <div className="w-full h-[100vh] bg-slate-900 flex justify-center items-center">
-          <input
-            className="w-[250px] h-20 m-5 h-[50px] border-none bg-blue-950 p-3 rounded-2xl"
-            placeholder="Enter Room Id"
-            onChange={(e) => {
-              setInputString(e.target.value);
-            }}
-          />
+          <span className={"px-6 py-3 rounded-lg  text-gray-200 font-medium"}>
+            {inputString}
+          </span>
 
           <button
             className="px-6 py-3 rounded-lg bg-gray-700 text-gray-200 font-medium
