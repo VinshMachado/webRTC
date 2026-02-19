@@ -44,6 +44,8 @@ app.use(express.json());
 app.use("/auth", GoogleAuthRouter);
 app.use("/user", userRouter);
 
+
+//socketThing
 InitalizeSocket(server);
 
 //------------------------Listen
