@@ -32,7 +32,7 @@ const server = http.createServer(app);
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", `${process.env.FRONTEND_URL}`],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
   }),
@@ -43,7 +43,6 @@ app.use(express.json());
 //-------------------- Routers
 app.use("/auth", GoogleAuthRouter);
 app.use("/user", userRouter);
-
 
 //socketThing
 InitalizeSocket(server);

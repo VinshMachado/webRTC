@@ -55,8 +55,8 @@ async function googleVerify(req, res) {
 
     res.cookie("token", jwtToken, {
       httpOnly: true,
-      secure: false, // HTTP localhost
-      sameSite: "lax", // ✅ REQUIRED for localhost
+      secure: false, 
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 

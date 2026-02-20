@@ -4,7 +4,9 @@ let io = null;
 const InitalizeSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: "http://localhost:3000",
+      origin: ["http://localhost:3000", "https://webrtc-i30i.onrender.com"],
+      methods: ["GET", "POST"],
+      credentials: true,
     },
   });
 
