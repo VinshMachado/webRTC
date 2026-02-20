@@ -22,7 +22,7 @@ export default function ChattingComp(data: Props) {
           <>
             <ChatBubble variant="received">
               <ChatBubbleAvatar
-                fallback="AI"
+                fallback="You"
                 src={data.image ? data.image : ""}
               />
               <ChatBubbleMessage className="text-black">
@@ -34,7 +34,7 @@ export default function ChattingComp(data: Props) {
           <>
             <ChatBubble variant="sent">
               <ChatBubbleAvatar
-                fallback="US"
+                fallback="Remote"
                 src={data.image ? data.image : ""}
               />
               <ChatBubbleMessage variant="sent">
