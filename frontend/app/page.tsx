@@ -30,7 +30,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         credentials: "include",
-      }
+      },
     );
 
     const data = await responce.json();
@@ -54,7 +54,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     const data = await responce.json();
@@ -94,8 +94,9 @@ export default function Home() {
           theme: "outline",
           size: "large",
           width: "300",
-        }
+        },
       );
+      router.refresh();
     }
   }, []);
 
@@ -105,7 +106,6 @@ export default function Home() {
       <div id="google-btn" className=" mt-10">
         {" "}
         Sign in
-        
       </div>
     </div>
   );
