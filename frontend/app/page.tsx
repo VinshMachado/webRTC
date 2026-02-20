@@ -103,7 +103,7 @@ export default function Home() {
   return (
     <div className="w-full h-screen bg-gray-900 flex justify-center items-center  flex-col">
       <h2 className="text-5xl text-white">Please Sign in to Begin</h2>
-      <button id="google-btn" className=" mt-10">
+      <button id="google-btn" className=" mt-10 text-white">
         {" "}
         Sign in
       </button>
