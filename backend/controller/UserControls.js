@@ -1,6 +1,6 @@
 import User from "../model/UserSchema.js";
 import jwt from "jsonwebtoken";
-
+//user
 const getUserDetails = async (req, res) => {
   const token = req.cookies.token;
   console.log(token);
