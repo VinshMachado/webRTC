@@ -8,7 +8,9 @@ import { Hash } from "lucide-react";
 import { AvatarImage } from "@/components/ui/avatar";
 import { AvatarFallback } from "@/components/ui/avatar";
 import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import Videocomponent from "./videocomponent";
+import { useRouter } from "next/navigation";
 interface MessageSchema {
   message: string;
   image: string;
@@ -63,6 +65,7 @@ const page = () => {
   );
 
   const [roomId, setRoomid] = useState<string | null>();
+  const router = useRouter();
 
   const localVideo = useRef<HTMLVideoElement | null>(null);
   const remoteVideo = useRef<HTMLVideoElement | null>(null);
@@ -72,6 +75,30 @@ const page = () => {
     const tempRoom = inputString;
 
     await socket?.emit("join-room", { id: tempRoom, name: Userdata.name });
+  };
+
+  const leaveMeeting = () => {
+    // Close peer connection
+    if (peerConnection.current) {
+      peerConnection.current.close();
+      peerConnection.current = null;
+    }
+    // Disconnect socket
+    if (socket) {
+      socket.disconnect();
+      setSocket(null);
+    }
+    // Reset state
+    setRoomid(null);
+    setInputString(null);
+    SetMessages([]);
+    serRemoteData({
+      message: "",
+      name: "nubie",
+      profile:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS36J6t0SbHUeuuQ0nq2j9ki507M79Pu-oT6g&s",
+    });
+    router.push("/dashboard");
   };
 
   const GetCamera = async () => {
@@ -222,10 +249,15 @@ const page = () => {
               </span>
             </div>
 
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={remoteProfileRef.current} />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
+            <div className="flex items-center gap-2">
+              <Button onClick={leaveMeeting} variant="destructive">
+                Leave Meeting
+              </Button>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={remoteProfileRef.current} />
+                <AvatarFallback>U</AvatarFallback>
+              </Avatar>
+            </div>
           </div>
           <Videocomponent
             localVideo={localVideo}
