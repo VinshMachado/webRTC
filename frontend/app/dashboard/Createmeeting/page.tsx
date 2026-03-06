@@ -8,9 +8,7 @@ import { Hash } from "lucide-react";
 import { AvatarImage } from "@/components/ui/avatar";
 import { AvatarFallback } from "@/components/ui/avatar";
 import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import Videocomponent from "./videocomponent";
-import { useRouter } from "next/navigation";
 interface MessageSchema {
   message: string;
   image: string;
@@ -18,14 +16,11 @@ interface MessageSchema {
 }
 const configuration = {
   iceServers: [
-    { urls: "stun:freestun.net:3478" },
     {
-      urls: "turn:freestun.net:3478",
-      username: "free",
-      credential: "free",
+      urls: ["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"],
     },
   ],
-  iceCandidatePoolSize: 3,
+  iceCandidatePoolSize: 10,
 };
 
 const page = () => {
@@ -65,7 +60,6 @@ const page = () => {
   );
 
   const [roomId, setRoomid] = useState<string | null>();
-  const router = useRouter();
 
   const localVideo = useRef<HTMLVideoElement | null>(null);
   const remoteVideo = useRef<HTMLVideoElement | null>(null);
@@ -98,7 +92,6 @@ const page = () => {
       profile:
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS36J6t0SbHUeuuQ0nq2j9ki507M79Pu-oT6g&s",
     });
-    router.push("/dashboard");
   };
 
   const GetCamera = async () => {
@@ -249,15 +242,10 @@ const page = () => {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button onClick={leaveMeeting} variant="destructive">
-                Leave Meeting
-              </Button>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={remoteProfileRef.current} />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-            </div>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={remoteProfileRef.current} />
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
           </div>
           <Videocomponent
             localVideo={localVideo}
@@ -268,6 +256,7 @@ const page = () => {
             socket={socket}
             roomId={roomId}
             SetMessages={SetMessages}
+            onLeave={leaveMeeting}
           />
         </>
       ) : (

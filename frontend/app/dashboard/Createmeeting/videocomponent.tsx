@@ -23,6 +23,7 @@ export interface ChatVideoContext {
 
   socket: Socket | null;
   roomId: string | null | undefined;
+  onLeave?: () => void;
 }
 
 const Videocomponent = ({
@@ -34,6 +35,7 @@ const Videocomponent = ({
   socket,
   roomId,
   SetMessages,
+  onLeave,
 }: ChatVideoContext) => {
   const Userdata = UserDetails((state) => state.Userdata);
   return (
@@ -59,6 +61,16 @@ const Videocomponent = ({
           <ChattingComp messages={messages} />
           <div className="p-4 bg-[#313338] border-t border-[#1e1f22] rounded-sm">
             <div className="flex items-center gap-3 bg-[#383a40] rounded-xl px-4 py-2 shadow-inner ">
+              {/* Leave Button */}
+              {onLeave && (
+                <Button
+                  onClick={onLeave}
+                  variant="destructive"
+                  className="mr-2"
+                >
+                  Leave Meeting
+                </Button>
+              )}
               {/* Input */}
               <input
                 placeholder="Message #general"

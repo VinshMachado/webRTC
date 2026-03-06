@@ -1,16 +1,16 @@
 "use client";
 import React, { useEffect } from "react";
-
+import { cn } from "@/lib/utils";
 import { useRef, useState } from "react";
 import { Hash } from "lucide-react";
 import { AvatarImage } from "@/components/ui/avatar";
 import { AvatarFallback } from "@/components/ui/avatar";
 import { Avatar } from "@/components/ui/avatar";
 import UserDetails from "@/Storage/Store";
-
+import { io, Socket } from "socket.io-client";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-
+import ChattingComp from "@/app/custom/chattingComp";
+import { SendHorizonal } from "lucide-react";
 import Videocomponent from "../Createmeeting/videocomponent";
 interface MessageSchema {
   message: string;
@@ -23,17 +23,10 @@ const configuration = {
     {
       urls: ["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"],
     },
-    {
-      urls: "turn:freestun.net:3478",
-      username: "free",
-      credential: "free",
-    },
   ],
-  iceCandidatePoolSize: 3,
 };
 
 const page = () => {
-  const router = useRouter();
   const [socket, setSocket] = useState<any | null>(null);
 
   const Userdata = UserDetails((state) => state.Userdata);
@@ -162,8 +155,18 @@ const page = () => {
       profile:
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS36J6t0SbHUeuuQ0nq2j9ki507M79Pu-oT6g&s",
     });
-    router.push("/dashboard");
   };
+
+  useEffect(() => {
+    if (!socket) {
+      const newSocket = io(process.env.NEXT_PUBLIC_BACKEND);
+      setSocket(newSocket);
+    }
+
+    return () => {
+      socket?.disconnect();
+    };
+  }, [socket]);
 
   useEffect(() => {
     if (!socket) return;
@@ -251,15 +254,10 @@ const page = () => {
             </div>
 
             {/* Right section avatar */}
-            <div className="flex items-center gap-2">
-              <Button onClick={leaveMeeting} variant="destructive">
-                Leave Meeting
-              </Button>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={RemoteData.profile} />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-            </div>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={RemoteData.profile} />
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
           </div>
 
           <Videocomponent
@@ -271,6 +269,7 @@ const page = () => {
             socket={socket}
             roomId={roomId}
             SetMessages={SetMessages}
+            onLeave={leaveMeeting}
           />
         </>
       ) : (
