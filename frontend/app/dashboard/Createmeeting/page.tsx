@@ -16,11 +16,14 @@ interface MessageSchema {
 }
 const configuration = {
   iceServers: [
+    { urls: "stun:freestun.net:3478" },
     {
-      urls: ["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"],
+      urls: "turn:freestun.net:3478",
+      username: "free",
+      credential: "free",
     },
   ],
-  iceCandidatePoolSize: 10,
+  iceCandidatePoolSize: 3,
 };
 
 const page = () => {
