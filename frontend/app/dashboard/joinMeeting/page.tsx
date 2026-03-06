@@ -24,11 +24,12 @@ const configuration = {
       urls: ["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"],
     },
     {
-      urls: "turn:your-turn-server.com:3478",
-      username: "yourUsername",
-      credential: "yourPassword",
+      urls: "turn:freestun.net:3478",
+      username: "free",
+      credential: "free",
     },
   ],
+  iceCandidatePoolSize: 3,
 };
 
 const page = () => {
