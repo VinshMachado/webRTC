@@ -8,9 +8,7 @@ import { AvatarFallback } from "@/components/ui/avatar";
 import { Avatar } from "@/components/ui/avatar";
 import UserDetails from "@/Storage/Store";
 import { io, Socket } from "socket.io-client";
-import { Button } from "@/components/ui/button";
-import ChattingComp from "@/app/custom/chattingComp";
-import { SendHorizonal } from "lucide-react";
+import { toast } from "sonner";
 import Videocomponent from "../Createmeeting/videocomponent";
 interface MessageSchema {
   message: string;
@@ -21,12 +19,12 @@ interface MessageSchema {
 const configuration = {
   iceServers: [
     {
-      urls: ["stun:stun.l.google.com:19302"],
+      urls: ["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"],
     },
     {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject",
+      urls: "turn:your-turn-server.com:3478",
+      username: "yourUsername",
+      credential: "yourPassword",
     },
   ],
 };
@@ -140,28 +138,6 @@ const page = () => {
     }
   };
 
-  const leaveMeeting = () => {
-    // Close peer connection
-    if (peerConnection.current) {
-      peerConnection.current.close();
-      peerConnection.current = null;
-    }
-    // Disconnect socket
-    if (socket) {
-      socket.disconnect();
-      setSocket(null);
-    }
-    // Reset state
-    setRoomid(null);
-    setInputString(null);
-    SetMessages([]);
-    setRemoteData({
-      name: "nubie",
-      profile:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS36J6t0SbHUeuuQ0nq2j9ki507M79Pu-oT6g&s",
-    });
-  };
-
   useEffect(() => {
     if (!socket) {
       const newSocket = io(process.env.NEXT_PUBLIC_BACKEND);
@@ -178,7 +154,8 @@ const page = () => {
     console.log(socket);
 
     socket?.on("Greeting", async (message: string) => {
-      alert(message);
+      toast(message);
+      //message
     });
 
     socket.on("recieveMessage", async (data: string) => {
@@ -274,7 +251,6 @@ const page = () => {
             socket={socket}
             roomId={roomId}
             SetMessages={SetMessages}
-            onLeave={leaveMeeting}
           />
         </>
       ) : (

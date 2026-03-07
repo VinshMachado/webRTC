@@ -9,6 +9,7 @@ import { AvatarImage } from "@/components/ui/avatar";
 import { AvatarFallback } from "@/components/ui/avatar";
 import { Avatar } from "@/components/ui/avatar";
 import Videocomponent from "./videocomponent";
+import { toast } from "sonner";
 interface MessageSchema {
   message: string;
   image: string;
@@ -17,12 +18,7 @@ interface MessageSchema {
 const configuration = {
   iceServers: [
     {
-      urls: ["stun:stun.l.google.com:19302"],
-    },
-    {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject",
+      urls: ["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"],
     },
   ],
 };
@@ -73,29 +69,6 @@ const page = () => {
     const tempRoom = inputString;
 
     await socket?.emit("join-room", { id: tempRoom, name: Userdata.name });
-  };
-
-  const leaveMeeting = () => {
-    // Close peer connection
-    if (peerConnection.current) {
-      peerConnection.current.close();
-      peerConnection.current = null;
-    }
-    // Disconnect socket
-    if (socket) {
-      socket.disconnect();
-      setSocket(null);
-    }
-    // Reset state
-    setRoomid(null);
-    setInputString(null);
-    SetMessages([]);
-    serRemoteData({
-      message: "",
-      name: "nubie",
-      profile:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS36J6t0SbHUeuuQ0nq2j9ki507M79Pu-oT6g&s",
-    });
   };
 
   const GetCamera = async () => {
@@ -181,7 +154,7 @@ const page = () => {
     socket?.on(
       "Greeting",
       (data: { message: string; name: string; profile: string }) => {
-        alert(data.message);
+        toast(data.message);
         console.log("greeting", data);
         serRemoteData(data);
         remoteProfileRef.current = data.profile;
@@ -260,7 +233,6 @@ const page = () => {
             socket={socket}
             roomId={roomId}
             SetMessages={SetMessages}
-            onLeave={leaveMeeting}
           />
         </>
       ) : (

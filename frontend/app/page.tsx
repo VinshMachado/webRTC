@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import UserDetails from "../Storage/Store";
+import { toast } from "sonner";
 declare global {
   interface Window {
     google: any;
@@ -36,9 +37,8 @@ export default function Home() {
     const data = await responce.json();
     if (!responce.ok) {
       console.log(data);
-      alert("failed");
     } else {
-      alert("signin success ");
+      toast("signin success ", { position: "top-center" });
       router.push("/dashboard");
     }
     console.log("worked");
@@ -60,7 +60,7 @@ export default function Home() {
     const data = await responce.json();
     if (!responce.ok) {
       console.log(data);
-      alert("failed");
+      toast("Please SignIn", { position: "top-left" });
     } else {
       storeUserDetails({
         _id: data.obj[0]._id,
